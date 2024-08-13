@@ -1,8 +1,10 @@
-from flask import Flask, render_template_string, request
+from flask import Flask, render_template_string, request, redirect, url_for
 import requests
 from bs4 import BeautifulSoup
 from openai import OpenAI
 import concurrent.futures
+import collections
+import time
 
 
 app = Flask(__name__)
@@ -24,8 +26,9 @@ index_html = """
                 <div class="uppercase tracking-wide text-sm text-indigo-500 font-semibold">Jike 人间清醒</div>
                 <form method="POST" class="mt-4">
                     <input type="text" name="url" placeholder="https://okjk.co/j8R3kn" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                    <div class="tracking-wide text-sm text-indigo-500 font-semibold">链接在即刻 APP 用户页面点击分享之后复制</div>
                     <button type="submit" class="mt-4 px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        去人间，有耐心
+                        坐稳扶好，去人间
                     </button>
                 </form>
             </div>
@@ -65,6 +68,15 @@ result_html = """<!-- templates/result.html -->
             </div>
         </div>
         {% endfor %}
+        <div class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl mb-8">
+            <div class="md:flex">
+                <div class="p-8">
+                    <div class="uppercase tracking-wide text-sm text-indigo-500 font-semibold">
+                        <a href="/">让我清醒下</a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </body>
 </html>"""
@@ -93,6 +105,9 @@ def parse_jike_link(url):
 
 
 client = OpenAI()
+user_cache = collections.defaultdict(dict)
+model_cache = collections.defaultdict(list)
+expire = collections.defaultdict(int)
 
 
 def get_model_response(model, prompt):
@@ -158,8 +173,7 @@ def process_data(user_data):
             except Exception as exc:
                 print(f"{model} generated an exception: {exc}")
                 results.append({"name": model, "text": f"Error: {str(exc)}"})
-
-    print(results)
+    results.reverse()
     return results
 
 
@@ -167,7 +181,43 @@ def process_data(user_data):
 def index():
     if request.method == "POST":
         url = request.form["url"]
-        user_data = parse_jike_link(url)
-        model_outputs = process_data(user_data)
-        return render_template_string(result_html, user=user_data, models=model_outputs)
+        if not url:
+            url = "https://okjk.co/j8R3kn"
+        # if expire[url] != 0 and time.time() - expire[url] > 3600:
+        #     del user_cache[url]
+        #     del model_cache[url]
+        # user_data, model_outputs = None, None
+        # if url in user_cache:
+        #     user_data = user_cache[url]
+        # if url in model_cache:
+        #     model_outputs = model_cache[url]
+        # if not user_data or not model_outputs:
+        #     user_data = parse_jike_link(url)
+        #     model_outputs = process_data(user_data)
+        #     user_cache[url] = user_data
+        #     model_cache[url] = model_outputs
+        #     expire[url] = int(time.time())
+        # return render_template_string(result_html, user=user_data, models=model_outputs)
+        return redirect("/history?url=%s" % url)
     return render_template_string(index_html)
+
+
+@app.route("/history", methods=["GET"])
+def history():
+    if request.method == "GET":
+        url = request.args.get("url", default="", type=str)
+        if expire[url] != 0 and time.time() - expire[url] > 3600:
+            del user_cache[url]
+            del model_cache[url]
+        user_data, model_outputs = {}, []
+        if url in user_cache:
+            user_data = user_cache[url]
+        if url in model_cache:
+            model_outputs = model_cache[url]
+        if not user_data or not model_outputs:
+            user_data = parse_jike_link(url)
+            model_outputs = process_data(user_data)
+            user_cache[url] = user_data
+            model_cache[url] = model_outputs
+            expire[url] = int(time.time())
+        return render_template_string(result_html, user=user_data, models=model_outputs)
