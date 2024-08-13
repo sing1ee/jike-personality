@@ -23,7 +23,7 @@ index_html = """
             <div class="p-8">
                 <div class="uppercase tracking-wide text-sm text-indigo-500 font-semibold">Jike 人间清醒</div>
                 <form method="POST" class="mt-4">
-                    <input type="text" name="url" placeholder="Enter Jike user link" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                    <input type="text" name="url" placeholder="https://okjk.co/j8R3kn" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                     <button type="submit" class="mt-4 px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                         去人间，有耐心
                     </button>
@@ -40,30 +40,32 @@ result_html = """<!-- templates/result.html -->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analysis Result</title>
+    <title>清醒了么？</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 p-8">
-    <div class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl mb-8">
-        <div class="md:flex">
-            <div class="p-8">
-                <div class="uppercase tracking-wide text-sm text-indigo-500 font-semibold">User Information</div>
-                <h2 class="block mt-1 text-lg leading-tight font-medium text-black">{{ user.nickname }}</h2>
-                <p class="mt-2 text-gray-500">{{ user.intro }}</p>
+<body>
+    <div class="bg-gray-100 p-8" id="info">
+        <div class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl mb-8">
+            <div class="md:flex">
+                <div class="p-8">
+                    <div class="uppercase tracking-wide text-sm text-indigo-500 font-semibold">User Information</div>
+                    <h2 class="block mt-1 text-lg leading-tight font-medium text-black">{{ user.nickname }}</h2>
+                    <p class="mt-2 text-gray-500">{{ user.intro }}</p>
+                </div>
             </div>
         </div>
-    </div>
 
-    {% for model in models %}
-    <div class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl mb-8">
-        <div class="md:flex">
-            <div class="p-8">
-                <div class="uppercase tracking-wide text-sm text-indigo-500 font-semibold">{{ model.name }}</div>
-                <p class="mt-2 text-gray-500">{{ model.text }}</p>
+        {% for model in models %}
+        <div class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl mb-8">
+            <div class="md:flex">
+                <div class="p-8">
+                    <div class="uppercase tracking-wide text-sm text-indigo-500 font-semibold">{{ model.name }}</div>
+                    <p class="mt-2 text-gray-500">{{ model.text }}</p>
+                </div>
             </div>
         </div>
+        {% endfor %}
     </div>
-    {% endfor %}
 </body>
 </html>"""
 
@@ -108,6 +110,8 @@ def get_model_response(model, prompt):
 prompt_template = '''
 You are a professional commentator known for your edgy and provocative style. Your task is to look at people's tweets and rate their personalities based on that. Be edgy and provocative, be mean a little. Don't be cringy. Here's a good attempt of a roast: """Alright, let's break this down. You're sitting in a jungle of houseplants, barefoot and looking like you just rolled out of bed. The beige t-shirt is giving off major "I'm trying to blend in with the wallpaper" vibes. And those black pants? They scream "I couldn't be bothered to find something that matches." But hey, at least you look comfortable. Comfort is key, right? Just maybe not when you're trying to make a fashion statement.""" 
 
+profile 和 posts 都来自社交网络：即刻。
+
 Input:
 
 《profile》
@@ -115,9 +119,9 @@ Input:
 %s
 《/profile》
 
-《tweets》
+《posts》
 %s
-《/tweets》
+《/posts》
 
 Output (请用中文输出):
 '''
