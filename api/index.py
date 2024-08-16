@@ -5,6 +5,7 @@ from openai import OpenAI
 import concurrent.futures
 import collections
 import time
+import os
 
 
 app = Flask(__name__)
@@ -141,40 +142,20 @@ Input:
 Output (请用中文输出):
 '''
 
+model = os.getenv("MODEL", "THUDM/glm-4-9b-chat")
+
 
 def process_data(user_data):
     # 这里应该是处理数据的逻辑
     # 返回模型输出的列表
-    models = [
-        "anthropic/claude-3.5-sonnet",
-        "google/gemini-pro-1.5",
-        "openai/gpt-4o-2024-08-06",
-        "qwen/qwen-72b-chat",
-    ]
+
     prompt = prompt_template % (
         user_data["nickname"],
         user_data["intro"],
         "\n***\n".join(user_data["posts"]),
     )
-    print(prompt)
-    with concurrent.futures.ThreadPoolExecutor(max_workers=len(models)) as executor:
-        # 创建一个future到model的映射
-        future_to_model = {
-            executor.submit(get_model_response, model, prompt): model
-            for model in models
-        }
 
-        results = []
-        for future in concurrent.futures.as_completed(future_to_model):
-            model = future_to_model[future]
-            try:
-                result = future.result()
-                results.append(result)
-            except Exception as exc:
-                print(f"{model} generated an exception: {exc}")
-                results.append({"name": model, "text": f"Error: {str(exc)}"})
-    results.reverse()
-    return results
+    return [get_model_response(model, prompt)]
 
 
 @app.route("/", methods=["GET", "POST"])
